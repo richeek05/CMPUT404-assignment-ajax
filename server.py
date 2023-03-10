@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 # Copyright 2013 Abram Hindle
+#
+# Copyright 2023 Richeek Mathur
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +24,7 @@
 
 
 import flask
-from flask import Flask, request
+from flask import Flask, jsonify, request, redirect
 import json
 app = Flask(__name__)
 app.debug = True
@@ -74,27 +76,40 @@ def flask_post_json():
 @app.route("/")
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    redirecting = redirect("/static/index.html", code =302) # redirect to the url
+    return redirecting
 
 @app.route("/entity/<entity>", methods=['POST','PUT'])
 def update(entity):
     '''update the entities via this interface'''
-    return None
-
+    if request.method == 'PUT' or request.method == 'POST':
+        for x,y in flask_post_json().items(): # get the raw body/data portion of a post in flask
+            myWorld.update(entity,x,y) # update the entity
+         # returning the jsonformatted string or the Json response 
+         # json.dumps() can also be used but jsonify() is better for API 
+         # also 'Content-type': 'application/json' can be used instead of jsonify
+        return jsonify(myWorld.get(entity)), 200
+    else:
+        return 'Error 405: Method Not Allowed', 405 # Method should be PUT or POST
+    
 @app.route("/world", methods=['POST','GET'])    
 def world():
     '''you should probably return the world here'''
-    return None
+    if request.method == 'GET' or request.method == 'POST':
+        return jsonify(myWorld.world()), 200
+    else:
+        return 'Error 405: Method Not Allowed', 405 # Method should be GET or POST
 
 @app.route("/entity/<entity>")    
 def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
-    return None
+    return jsonify(myWorld.get(entity)), 200 # return the entity after GET 
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
     '''Clear the world out!'''
-    return None
+    myWorld.clear()
+    return jsonify(myWorld.world()), 200 # clearing and then returing the world
 
 if __name__ == "__main__":
     app.run()
